@@ -3,11 +3,13 @@ pragma solidity ^0.8.13;
 
 import {Test, console2} from "forge-std/Test.sol";
 import {Counter} from "../src/Counter.sol";
+import {IERC20} from "@openzeppelin/token/ERC20/IERC20.sol";
 
 contract CounterTest is Test {
     Counter public counter;
     address public selfAddress;
     Helper public helper;
+    IERC20 public pepe; 
 
     function setUp() public {
         counter = new Counter();
@@ -16,6 +18,10 @@ contract CounterTest is Test {
         helper =new Helper();
 
         selfAddress = address(1);
+
+        pepe = IERC20(0x6982508145454Ce325dDbE47a25d4ec3d2311933);
+        // 如果环境变量已经设置情况下可读取
+        // dai = IERC20(vm.envAddress("DAI"));
     }
 
     // function test_Increment() public {
@@ -65,7 +71,52 @@ contract CounterTest is Test {
         // 系列调用不变
         // vm.startPrank(msgSender);
         // vm.stopPrank();
+    }
 
+    
+    function test_change() public {
+        // 改变账户中代币的数量
+        console2.log(selfAddress.balance);
+        vm.deal(selfAddress, 1 ether);
+        console2.log("new balance", selfAddress.balance);
+
+        string memory rpcUrl = vm.envString("ETH_RPC_URL");
+        uint256 mainNetForkId = vm.createFork(rpcUrl);
+        vm.selectFork(mainNetForkId);
+        console2.log("forkId", mainNetForkId);
+        // forge test -vvv --fork-url=$ETH_RPC_URL 需要虚拟化运行主网
+        console2.log("pepe before", pepe.balanceOf(selfAddress));
+        deal(address(pepe), selfAddress, 10244000000);
+        console2.log("pepe after", pepe.balanceOf(selfAddress));
+    }
+
+    // 设置运行的环境
+    function test_runRpc() public {
+        string memory rpcUrl = vm.envString("ETH_RPC_URL");
+        uint256 mainNetForkId = vm.createFork(rpcUrl);
+        vm.selectFork(mainNetForkId);
+        // vm.rollFork(10000); //在指定块儿高执行
+        // console2.log(block.number);
+        console2.log("forkId", mainNetForkId);
+        // 后续都在fork环境下执行
+    }
+
+    // 对比其他语言的计算结果和sol合约中是否相同
+    // forge test -vvv --ffi
+    function test_checkSign() public{
+        string memory message = "xin";
+        bytes32 hashInfo = keccak256(abi.encodePacked(message));
+        console2.logBytes32(hashInfo);
+
+        string[] memory cmd = new string[](3);
+        cmd[0] = "cast";
+        cmd[1] = "keccak";
+        cmd[2] = message;
+
+        bytes memory result = vm.ffi(cmd);
+        bytes32 hash1 = abi.decode(result, (bytes32));
+
+        assertEq(hashInfo, hash1);
     }
 }
 
