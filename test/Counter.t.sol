@@ -40,7 +40,7 @@ contract CounterTest is Test {
     }
 
     // 使用定义好的事件
-    function test_event() public{
+    function test_event1() public{
         emit log("use event ");
         emit log_address(msg.sender);
     }
@@ -118,11 +118,46 @@ contract CounterTest is Test {
 
         assertEq(hashInfo, hash1);
     }
+
+    event MyEvent(uint256 indexed a, uint256 indexed b, uint256 c);
+
+    // 函数事件的捕获
+    function test_event() public {
+        vm.expectEmit(false, false, false, false);
+        emit MyEvent(1, 2, 3);
+        helper.callEvent();
+    }
+
+    // 自定义错误
+    function test_revert()public {
+        vm.expectRevert("some revert");
+        helper.revertIt();
+    }
+
+    function test_CustomError()public {
+        vm.expectRevert(Helper.CustomError.selector);
+        helper.callCustomError();
+    }
 }
 
 
 contract Helper{
+    event MyEvent(uint256 indexed a, uint256 indexed b, uint256 c);
+    error CustomError();
+
     function whoCalled() view public returns(address) {
         return msg.sender;
+    }
+
+    function callEvent() public {
+        emit MyEvent(1, 2, 3);
+    }
+
+    function revertIt() public {
+        revert("some revert");
+    }
+
+    function callCustomError() public {
+        revert CustomError(); 
     }
 }
